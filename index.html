@@ -83,6 +83,48 @@
             font-style: italic;
         }
 
+        .name-setup {
+            background: linear-gradient(135deg, #ffeef8 0%, #ffe4f3 100%);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .name-setup h3 {
+            color: #764ba2;
+            margin-bottom: 15px;
+        }
+
+        .name-setup input {
+            padding: 12px 20px;
+            border: 2px solid #d4a5d4;
+            border-radius: 20px;
+            font-size: 16px;
+            margin-right: 10px;
+            outline: none;
+        }
+
+        .name-setup button {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .current-user {
+            background: linear-gradient(135deg, #ffeef8 0%, #ffe4f3 100%);
+            padding: 10px 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #764ba2;
+            font-weight: bold;
+        }
+
         .photo-gallery {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -266,6 +308,12 @@
             cursor: pointer;
         }
 
+        .loading {
+            text-align: center;
+            color: #764ba2;
+            padding: 20px;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 20px;
@@ -287,7 +335,18 @@
     <div class="container">
         <div class="header">
             <h1>💕 Our Love Notes 💕</h1>
-            <p>Happy Valentines Day 😉</p>
+            <p>A special place just for us</p>
+        </div>
+
+        <div class="name-setup" id="nameSetup">
+            <h3>What should I call you? 💖</h3>
+            <input type="text" id="nameInput" placeholder="Your name..." maxlength="20">
+            <button onclick="setUserName()">Set Name</button>
+        </div>
+
+        <div class="current-user" id="currentUser" style="display: none;">
+            Chatting as: <span id="userName"></span> 
+            <button onclick="changeName()" style="background: none; border: none; color: #764ba2; cursor: pointer; text-decoration: underline; font-size: 0.9em;">change</button>
         </div>
 
         <div class="photo-gallery" id="photoGallery">
@@ -311,10 +370,7 @@
         </button>
 
         <div class="messages-container" id="messagesContainer">
-            <div class="message them">
-                <div>Welcome to our special space! 💖</div>
-                <div class="message-info">Just now</div>
-            </div>
+            <div class="loading">Loading messages... 💕</div>
         </div>
 
         <div class="input-area">
@@ -333,7 +389,41 @@
         <img src="" alt="Full size" id="modalImage">
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
     <script>
+        // IMPORTANT: Replace this with your Firebase config
+        // Get this from Firebase Console after creating a project
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        let db;
+        let currentUserName = localStorage.getItem('valentineUserName') || '';
+
+        // Initialize Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+            console.log('Firebase initialized successfully');
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+            document.getElementById('messagesContainer').innerHTML = `
+                <div style="text-align: center; color: #f5576c; padding: 20px;">
+                    <h3>⚠️ Firebase Setup Required</h3>
+                    <p>Please follow the setup instructions to enable messaging!</p>
+                </div>
+            `;
+        }
+
         // Create floating hearts
         function createHeart() {
             const heart = document.createElement('div');
@@ -347,57 +437,92 @@
             setTimeout(() => heart.remove(), 20000);
         }
 
-        // Create hearts continuously
         setInterval(createHeart, 2000);
         for(let i = 0; i < 10; i++) {
             setTimeout(createHeart, i * 500);
         }
 
-        // Message handling with storage
+        // User name handling
+        function setUserName() {
+            const name = document.getElementById('nameInput').value.trim();
+            if (name) {
+                currentUserName = name;
+                localStorage.setItem('valentineUserName', name);
+                document.getElementById('nameSetup').style.display = 'none';
+                document.getElementById('currentUser').style.display = 'block';
+                document.getElementById('userName').textContent = name;
+            }
+        }
+
+        function changeName() {
+            document.getElementById('nameSetup').style.display = 'block';
+            document.getElementById('currentUser').style.display = 'none';
+            document.getElementById('nameInput').value = currentUserName;
+        }
+
+        // Check if user has a name
+        if (currentUserName) {
+            document.getElementById('nameSetup').style.display = 'none';
+            document.getElementById('currentUser').style.display = 'block';
+            document.getElementById('userName').textContent = currentUserName;
+        }
+
+        // Message handling
         function loadMessages() {
-            const messages = JSON.parse(localStorage.getItem('loveNotes') || '[]');
-            const container = document.getElementById('messagesContainer');
-            container.innerHTML = '';
+            if (!db) return;
             
-            if (messages.length === 0) {
-                container.innerHTML = `
-                    <div class="message them">
-                        <div>Welcome to our special space! 💖</div>
-                        <div class="message-info">Just now</div>
-                    </div>
-                `;
-            } else {
-                messages.forEach(msg => {
+            const messagesRef = db.ref('messages');
+            messagesRef.on('value', (snapshot) => {
+                const container = document.getElementById('messagesContainer');
+                container.innerHTML = '';
+                
+                const messages = snapshot.val();
+                
+                if (!messages) {
+                    container.innerHTML = `
+                        <div class="message them">
+                            <div>Welcome to our special space! 💖 Start chatting!</div>
+                            <div class="message-info">Just now</div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                Object.keys(messages).forEach(key => {
+                    const msg = messages[key];
                     const div = document.createElement('div');
-                    div.className = `message ${msg.sender}`;
+                    const isCurrentUser = msg.sender === currentUserName;
+                    div.className = `message ${isCurrentUser ? 'you' : 'them'}`;
                     div.innerHTML = `
                         <div>${msg.text}</div>
-                        <div class="message-info">${msg.time}</div>
+                        <div class="message-info">${msg.sender} • ${msg.time}</div>
                     `;
                     container.appendChild(div);
                 });
-            }
-            
-            container.scrollTop = container.scrollHeight;
+                
+                container.scrollTop = container.scrollHeight;
+            });
         }
 
         function sendMessage() {
+            if (!currentUserName) {
+                alert('Please set your name first! 💕');
+                return;
+            }
+            
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
             
-            if (text) {
-                const messages = JSON.parse(localStorage.getItem('loveNotes') || '[]');
-                const newMessage = {
+            if (text && db) {
+                const messagesRef = db.ref('messages');
+                messagesRef.push({
                     text: text,
-                    sender: 'you',
-                    time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-                };
-                
-                messages.push(newMessage);
-                localStorage.setItem('loveNotes', JSON.stringify(messages));
+                    sender: currentUserName,
+                    time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                    timestamp: Date.now()
+                });
                 
                 input.value = '';
-                loadMessages();
             }
         }
 
@@ -407,15 +532,23 @@
             }
         }
 
-        // Photo handling with storage
+        // Photo handling
         function loadPhotos() {
-            const photos = JSON.parse(localStorage.getItem('couplePhotos') || '[]');
-            const gallery = document.getElementById('photoGallery');
-            const slots = gallery.querySelectorAll('.photo-slot');
+            if (!db) return;
             
-            photos.forEach((photo, index) => {
-                if (index < slots.length && photo) {
-                    slots[index].innerHTML = `<img src="${photo}" alt="Our photo ${index + 1}" onclick="openModal(this.src)">`;
+            const photosRef = db.ref('photos');
+            photosRef.on('value', (snapshot) => {
+                const photos = snapshot.val();
+                const gallery = document.getElementById('photoGallery');
+                const slots = gallery.querySelectorAll('.photo-slot');
+                
+                if (photos) {
+                    const photoArray = Object.values(photos);
+                    photoArray.forEach((photo, index) => {
+                        if (index < slots.length) {
+                            slots[index].innerHTML = `<img src="${photo}" alt="Our photo ${index + 1}" onclick="openModal(this.src)">`;
+                        }
+                    });
                 }
             });
         }
@@ -426,10 +559,10 @@
                 const reader = new FileReader();
                 
                 reader.onload = function(e) {
-                    const photos = JSON.parse(localStorage.getItem('couplePhotos') || '[]');
-                    photos.push(e.target.result);
-                    localStorage.setItem('couplePhotos', JSON.stringify(photos));
-                    loadPhotos();
+                    if (db) {
+                        const photosRef = db.ref('photos');
+                        photosRef.push(e.target.result);
+                    }
                 };
                 
                 reader.readAsDataURL(file);
@@ -448,18 +581,10 @@
         }
 
         // Initialize
-        loadMessages();
-        loadPhotos();
-
-        // Sync messages between tabs
-        window.addEventListener('storage', function(e) {
-            if (e.key === 'loveNotes') {
-                loadMessages();
-            }
-            if (e.key === 'couplePhotos') {
-                loadPhotos();
-            }
-        });
+        if (db) {
+            loadMessages();
+            loadPhotos();
+        }
     </script>
 </body>
 </html>
