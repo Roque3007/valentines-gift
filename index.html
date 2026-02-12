@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Love Notes 💕</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .hearts-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .heart {
+            position: absolute;
+            font-size: 20px;
+            opacity: 0.3;
+            animation: float 15s infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.3;
+            }
+            90% {
+                opacity: 0.3;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #764ba2;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-style: italic;
+        }
+
+        .photo-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #ffeef8 0%, #ffe4f3 100%);
+            border-radius: 20px;
+        }
+
+        .photo-slot {
+            aspect-ratio: 1;
+            background: white;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            border: 3px dashed #d4a5d4;
+            transition: all 0.3s ease;
+        }
+
+        .photo-slot:hover {
+            transform: scale(1.05);
+            border-color: #764ba2;
+        }
+
+        .photo-slot img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-slot .placeholder {
+            color: #d4a5d4;
+            font-size: 40px;
+        }
+
+        .messages-container {
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 20px;
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 18px;
+            border-radius: 20px;
+            max-width: 70%;
+            word-wrap: break-word;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.you {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.them {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            margin-right: auto;
+            border-bottom-left-radius: 5px;
+        }
+
+        .message-info {
+            font-size: 0.75em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .input-area input:focus {
+            border-color: #764ba2;
+        }
+
+        .input-area button {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .input-area button:hover {
+            transform: scale(1.05);
+        }
+
+        .input-area button:active {
+            transform: scale(0.95);
+        }
+
+        .upload-photo-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .upload-photo-btn:hover {
+            transform: scale(1.05);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 10px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hearts-background" id="heartsContainer"></div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>💕 Our Love Notes 💕</h1>
+            <p>A special place just for us</p>
+        </div>
+
+        <div class="photo-gallery" id="photoGallery">
+            <div class="photo-slot" onclick="document.getElementById('photoInput').click()">
+                <span class="placeholder">📷</span>
+            </div>
+            <div class="photo-slot" onclick="document.getElementById('photoInput').click()">
+                <span class="placeholder">💑</span>
+            </div>
+            <div class="photo-slot" onclick="document.getElementById('photoInput').click()">
+                <span class="placeholder">❤️</span>
+            </div>
+            <div class="photo-slot" onclick="document.getElementById('photoInput').click()">
+                <span class="placeholder">✨</span>
+            </div>
+        </div>
+
+        <input type="file" id="photoInput" accept="image/*" onchange="handlePhotoUpload(event)">
+        <button class="upload-photo-btn" onclick="document.getElementById('photoInput').click()">
+            📸 Add Our Photos
+        </button>
+
+        <div class="messages-container" id="messagesContainer">
+            <div class="message them">
+                <div>Welcome to our special space! 💖</div>
+                <div class="message-info">Just now</div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <input 
+                type="text" 
+                id="messageInput" 
+                placeholder="Type your love note here..." 
+                onkeypress="handleKeyPress(event)"
+            >
+            <button onclick="sendMessage()">Send 💌</button>
+        </div>
+    </div>
+
+    <div class="modal" id="imageModal" onclick="closeModal()">
+        <span class="close-modal">&times;</span>
+        <img src="" alt="Full size" id="modalImage">
+    </div>
+
+    <script>
+        // Create floating hearts
+        function createHeart() {
+            const heart = document.createElement('div');
+            heart.className = 'heart';
+            heart.textContent = '❤️';
+            heart.style.left = Math.random() * 100 + '%';
+            heart.style.animationDuration = (Math.random() * 10 + 10) + 's';
+            heart.style.animationDelay = Math.random() * 5 + 's';
+            document.getElementById('heartsContainer').appendChild(heart);
+            
+            setTimeout(() => heart.remove(), 20000);
+        }
+
+        // Create hearts continuously
+        setInterval(createHeart, 2000);
+        for(let i = 0; i < 10; i++) {
+            setTimeout(createHeart, i * 500);
+        }
+
+        // Message handling with storage
+        function loadMessages() {
+            const messages = JSON.parse(localStorage.getItem('loveNotes') || '[]');
+            const container = document.getElementById('messagesContainer');
+            container.innerHTML = '';
+            
+            if (messages.length === 0) {
+                container.innerHTML = `
+                    <div class="message them">
+                        <div>Welcome to our special space! 💖</div>
+                        <div class="message-info">Just now</div>
+                    </div>
+                `;
+            } else {
+                messages.forEach(msg => {
+                    const div = document.createElement('div');
+                    div.className = `message ${msg.sender}`;
+                    div.innerHTML = `
+                        <div>${msg.text}</div>
+                        <div class="message-info">${msg.time}</div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+            
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            
+            if (text) {
+                const messages = JSON.parse(localStorage.getItem('loveNotes') || '[]');
+                const newMessage = {
+                    text: text,
+                    sender: 'you',
+                    time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                };
+                
+                messages.push(newMessage);
+                localStorage.setItem('loveNotes', JSON.stringify(messages));
+                
+                input.value = '';
+                loadMessages();
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Photo handling with storage
+        function loadPhotos() {
+            const photos = JSON.parse(localStorage.getItem('couplePhotos') || '[]');
+            const gallery = document.getElementById('photoGallery');
+            const slots = gallery.querySelectorAll('.photo-slot');
+            
+            photos.forEach((photo, index) => {
+                if (index < slots.length && photo) {
+                    slots[index].innerHTML = `<img src="${photo}" alt="Our photo ${index + 1}" onclick="openModal(this.src)">`;
+                }
+            });
+        }
+
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const photos = JSON.parse(localStorage.getItem('couplePhotos') || '[]');
+                    photos.push(e.target.result);
+                    localStorage.setItem('couplePhotos', JSON.stringify(photos));
+                    loadPhotos();
+                };
+                
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function openModal(src) {
+            if (src) {
+                document.getElementById('modalImage').src = src;
+                document.getElementById('imageModal').classList.add('active');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').classList.remove('active');
+        }
+
+        // Initialize
+        loadMessages();
+        loadPhotos();
+
+        // Sync messages between tabs
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'loveNotes') {
+                loadMessages();
+            }
+            if (e.key === 'couplePhotos') {
+                loadPhotos();
+            }
+        });
+    </script>
+</body>
+</html>
